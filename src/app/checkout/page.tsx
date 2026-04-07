@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Container, Typography, Box, Grid, Card, TextField, Button, Alert, CircularProgress } from '@mui/material';
+import { Container, Typography, Box, Grid, Card, TextField, Button, Alert, CircularProgress, InputAdornment } from '@mui/material';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '@/lib/redux/store';
 import { clearCart } from '@/lib/redux/features/cartSlice';
@@ -46,8 +46,12 @@ export default function Checkout() {
       router.push('/login');
       return;
     }
-    if (!address || !phone) {
-      setError("Please fill in address and phone number");
+    if (!address) {
+      setError("Please fill in your delivery address");
+      return;
+    }
+    if (phone.length !== 10) {
+      setError("Please enter a valid 10-digit phone number");
       return;
     }
 
@@ -59,8 +63,8 @@ export default function Checkout() {
       const response = await fetch('/api/razorpay', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        // Usually should convert USD to INR or use USD. We'll specify INR in api or here. Let's send USD.
-        body: JSON.stringify({ amount: total, currency: "USD" }),
+        // Using INR as requested by the user
+        body: JSON.stringify({ amount: total, currency: "INR" }),
       });
       
       const data = await response.json();
@@ -140,9 +144,19 @@ export default function Checkout() {
                 fullWidth label="Delivery Address" margin="normal" rows={3} multiline
                 value={address} onChange={(e) => setAddress(e.target.value)}
               />
-              <TextField 
+               <TextField 
                 fullWidth label="Phone Number" margin="normal"
-                value={phone} onChange={(e) => setPhone(e.target.value)}
+                value={phone} 
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, ''); // Only digits
+                  if (val.length <= 10) setPhone(val);
+                }}
+                placeholder="9876543210"
+                helperText={phone.length > 0 && phone.length < 10 ? "Must be 10 digits" : ""}
+                error={phone.length > 0 && phone.length < 10}
+                InputProps={{
+                  startAdornment: <InputAdornment position="start">+91</InputAdornment>,
+                }}
               />
             </Card>
           </Grid>
@@ -156,7 +170,7 @@ export default function Checkout() {
                 ))}
               </Box>
               <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 3, color: 'var(--primary)' }}>
-                Total: ${total.toFixed(2)}
+                Total: ₹{total.toFixed(2)}
               </Typography>
               <Button 
                 variant="contained" color="secondary" fullWidth size="large" 

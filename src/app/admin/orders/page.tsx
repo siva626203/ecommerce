@@ -82,7 +82,7 @@ export default function AdminOrders() {
                       Date: {order.createdAt ? new Date(order.createdAt.seconds * 1000).toLocaleString() : 'N/A'}
                     </Typography>
                     <Typography variant="body1" sx={{ mt: 1, fontWeight: 'bold' }}>
-                      Total: ${order.total.toFixed(2)}
+                      Total: ₹{order.total.toFixed(2)}
                     </Typography>
                   </Box>
                   

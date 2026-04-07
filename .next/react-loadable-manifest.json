@@ -4,5 +4,11 @@
     "files": [
       "static/chunks/_app-pages-browser_node_modules_next_dist_client_dev_noop-turbopack-hmr_js.js"
     ]
+  },
+  "app\\admin\\products\\page.tsx -> @/components/ProductFormModal": {
+    "id": "app\\admin\\products\\page.tsx -> @/components/ProductFormModal",
+    "files": [
+      "static/chunks/_app-pages-browser_src_components_ProductFormModal_tsx.js"
+    ]
   }
 }

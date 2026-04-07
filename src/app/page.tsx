@@ -62,13 +62,13 @@ export default function Home() {
                 <CardMedia
                   component="img"
                   height="250"
-                  image={product.imageUrl || 'https://via.placeholder.com/250'}
+                  image={(product.images && product.images.length > 0) ? product.images[0] : (product.imageUrl || 'https://via.placeholder.com/250')}
                   alt={product.name}
                   sx={{ objectFit: 'cover' }}
                 />
                 <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
                   <Typography variant="h6" gutterBottom noWrap>{product.name}</Typography>
-                  <Typography variant="h5" color="secondary" sx={{ fontWeight: 'bold', mb: 1 }}>${product.price.toFixed(2)}</Typography>
+                  <Typography variant="h5" color="secondary" sx={{ fontWeight: 'bold', mb: 1 }}>₹{product.price.toFixed(2)}</Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2, flexGrow: 1 }}>
                     {product.description.length > 80 ? `${product.description.slice(0, 80)}...` : product.description}
                   </Typography>

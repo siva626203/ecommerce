@@ -48,7 +48,7 @@ export default function Cart() {
                 )}
                 <Box sx={{ flexGrow: 1 }}>
                   <Typography variant="h6">{item.name}</Typography>
-                  <Typography variant="body1" color="secondary" sx={{ fontWeight: 'bold' }}>${item.price.toFixed(2)}</Typography>
+                  <Typography variant="body1" color="secondary" sx={{ fontWeight: 'bold' }}>₹{item.price.toFixed(2)}</Typography>
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <IconButton onClick={() => handleDecrease(item.id)}><RemoveIcon /></IconButton>
@@ -66,7 +66,7 @@ export default function Cart() {
               <Divider sx={{ my: 2 }} />
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                 <Typography>Subtotal</Typography>
-                <Typography>${total.toFixed(2)}</Typography>
+                <Typography>₹{total.toFixed(2)}</Typography>
               </Box>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                 <Typography>Shipping</Typography>
@@ -75,7 +75,7 @@ export default function Cart() {
               <Divider sx={{ my: 2 }} />
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
                 <Typography variant="h6">Total</Typography>
-                <Typography variant="h6" color="secondary">${total.toFixed(2)}</Typography>
+                <Typography variant="h6" color="secondary">₹{total.toFixed(2)}</Typography>
               </Box>
               <Button variant="contained" color="primary" fullWidth size="large" component={Link} href="/checkout" sx={{ borderRadius: 8 }}>
                 Proceed to Checkout

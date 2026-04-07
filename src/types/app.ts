@@ -11,7 +11,8 @@ export interface Product {
   name: string;
   price: number;
   description: string;
-  imageUrl: string;
+  imageUrl: string; // Legacy/Main image
+  images?: string[]; // Multiple images support
 }
 
 export interface CartItem {

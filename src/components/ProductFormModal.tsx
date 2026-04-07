@@ -1,10 +1,16 @@
 "use client";
 
-import React, { useState } from 'react';
-import { Button, TextField, Box, Typography, Dialog, DialogTitle, DialogContent, DialogActions, LinearProgress } from '@mui/material';
+import React, { useState, useRef } from 'react';
+import { 
+  Button, TextField, Box, Typography, Dialog, DialogTitle, 
+  DialogContent, DialogActions, CircularProgress, Grid, 
+  IconButton, Alert
+} from '@mui/material';
 import { collection, addDoc } from 'firebase/firestore';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '@/lib/firebase/config';
+import DeleteIcon from '@mui/icons-material/Delete';
+import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
 
 interface ProductFormModalProps {
   open: boolean;
@@ -16,80 +22,167 @@ export default function ProductFormModal({ open, onClose, onSuccess }: ProductFo
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [description, setDescription] = useState('');
-  const [image, setImage] = useState<File | null>(null);
-  const [uploadProgress, setUploadProgress] = useState(0);
+  const [images, setImages] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const selectedFiles = Array.from(e.target.files);
+      setImages(prev => [...prev, ...selectedFiles]);
+      
+      const selectedPreviews = selectedFiles.map(file => URL.createObjectURL(file));
+      setPreviews(prev => [...prev, ...selectedPreviews]);
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setImages(prev => prev.filter((_, i) => i !== index));
+    setPreviews(prev => {
+      const newPreviews = prev.filter((_, i) => i !== index);
+      // Revoke the URL to avoid memory leaks
+      URL.revokeObjectURL(prev[index]);
+      return newPreviews;
+    });
+  };
 
   const handleAddProduct = async () => {
-    if (!name || !price || !description || !image) return alert("Please fill all fields!");
+    if (!name || !price || !description || images.length === 0) {
+      setError("Please fill all fields and upload at least one image!");
+      return;
+    }
 
-    const storageRef = ref(storage, `products/${Date.now()}_${image.name}`);
-    const uploadTask = uploadBytesResumable(storageRef, image);
+    setIsLoading(true);
+    setError('');
 
-    uploadTask.on(
-      'state_changed',
-      (snapshot) => {
-        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        setUploadProgress(progress);
-      },
-      (error) => {
-        console.error("Upload failed", error);
-        alert("Upload failed.");
-      },
-      async () => {
-        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-        await addDoc(collection(db, 'products'), {
-          name,
-          price: parseFloat(price),
-          description,
-          imageUrl: downloadURL,
-          createdAt: new Date()
-        });
-        
-        // Reset form
-        setName('');
-        setPrice('');
-        setDescription('');
-        setImage(null);
-        setUploadProgress(0);
-        onSuccess();
-        onClose();
-      }
-    );
+    try {
+      // 1. Upload all images concurrently
+      const uploadPromises = images.map(async (file) => {
+        const storageRef = ref(storage, `products/${Date.now()}_${file.name}`);
+        const snapshot = await uploadBytes(storageRef, file);
+        return getDownloadURL(snapshot.ref);
+      });
+
+      const imageUrls = await Promise.all(uploadPromises);
+
+      // 2. Save product to Firestore
+      await addDoc(collection(db, 'products'), {
+        name,
+        price: parseFloat(price),
+        description,
+        imageUrl: imageUrls[0], // Main image
+        images: imageUrls, // All images array
+        createdAt: new Date()
+      });
+      
+      // Cleanup previews
+      previews.forEach(url => URL.revokeObjectURL(url));
+      
+      // Reset form
+      setName('');
+      setPrice('');
+      setDescription('');
+      setImages([]);
+      setPreviews([]);
+      setIsLoading(false);
+      onSuccess();
+      onClose();
+    } catch (err: any) {
+      console.error("Failed to add product", err);
+      setError(err.message || "Failed to add product. Please check your connection.");
+      setIsLoading(false);
+    }
   };
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+    <Dialog open={open} onClose={isLoading ? undefined : onClose} fullWidth maxWidth="sm">
       <DialogTitle>Add New Product</DialogTitle>
       <DialogContent>
+        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+        
         <TextField 
           fullWidth label="Product Name" margin="normal" 
           value={name} onChange={(e) => setName(e.target.value)} 
+          disabled={isLoading}
         />
         <TextField 
-          fullWidth label="Price ($)" type="number" margin="normal" 
+          fullWidth label="Price (₹)" type="number" margin="normal" 
           value={price} onChange={(e) => setPrice(e.target.value)} 
+          disabled={isLoading}
         />
         <TextField 
           fullWidth label="Description" margin="normal" multiline rows={3}
           value={description} onChange={(e) => setDescription(e.target.value)} 
+          disabled={isLoading}
         />
-        <Box sx={{ mt: 2 }}>
-          <Button variant="contained" component="label">
-            Upload Image
-            <input type="file" hidden accept="image/*" onChange={(e) => {
-              if (e.target.files && e.target.files[0]) setImage(e.target.files[0]);
-            }} />
+        
+        <Box sx={{ mt: 3, mb: 1 }}>
+          <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600 }}>
+            Product Images
+          </Typography>
+          <Button 
+            variant="outlined" 
+            component="label" 
+            startIcon={<AddPhotoAlternateIcon />}
+            disabled={isLoading}
+            fullWidth
+            sx={{ borderStyle: 'dashed', py: 2 }}
+          >
+            Select Images
+            <input 
+              type="file" 
+              hidden 
+              accept="image/*" 
+              multiple 
+              onChange={handleFileChange} 
+              ref={fileInputRef}
+            />
           </Button>
-          {image && <Typography sx={{ ml: 2, display: 'inline' }}>{image.name}</Typography>}
         </Box>
-        {uploadProgress > 0 && uploadProgress < 100 && (
-          <LinearProgress variant="determinate" value={uploadProgress} sx={{ mt: 2 }} />
-        )}
+
+        {/* Previews Grid */}
+        <Grid container spacing={1} sx={{ mt: 1 }}>
+          {previews.map((url, index) => (
+            <Grid size={{ xs: 4, sm: 3 }} key={index}>
+              <Box sx={{ position: 'relative', pt: '100%' }}>
+                <Box 
+                  component="img" 
+                  src={url} 
+                  sx={{ 
+                    position: 'absolute', top: 0, left: 0, 
+                    width: '100%', height: '100%', 
+                    objectFit: 'cover', borderRadius: 1,
+                    border: '1px solid #ddd'
+                  }} 
+                />
+                <IconButton 
+                  size="small" 
+                  onClick={() => removeImage(index)}
+                  sx={{ 
+                    position: 'absolute', top: 2, right: 2, 
+                    bgcolor: 'rgba(255,255,255,0.8)',
+                    '&:hover': { bgcolor: 'white' }
+                  }}
+                  disabled={isLoading}
+                >
+                  <DeleteIcon fontSize="inherit" color="error" />
+                </IconButton>
+              </Box>
+            </Grid>
+          ))}
+        </Grid>
       </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button variant="contained" onClick={handleAddProduct} disabled={uploadProgress > 0 && uploadProgress < 100}>
-          Save
+      <DialogActions sx={{ p: 3 }}>
+        <Button onClick={onClose} disabled={isLoading}>Cancel</Button>
+        <Button 
+          variant="contained" 
+          onClick={handleAddProduct} 
+          disabled={isLoading}
+          sx={{ minWidth: 100, borderRadius: 5, height: 45 }}
+        >
+          {isLoading ? <CircularProgress size={24} color="inherit" /> : 'Save Product'}
         </Button>
       </DialogActions>
     </Dialog>

@@ -76,9 +76,7 @@ export default function MyOrders() {
                     </Box>
 
                     <Box sx={{ textAlign: 'right' }}>
-                      <Typography variant="h6" color="secondary" sx={{ fontWeight: 'bold', mb: 1 }}>
-                        ${order.total.toFixed(2)}
-                      </Typography>
+                        ₹{order.total.toFixed(2)}
                       <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
                         <Chip label={`Payment: ${order.paymentStatus ?? 'pending'}`} size="small" color={getStatusColor(order.paymentStatus ?? 'pending') as any} />
                         <Chip label={order.status.toUpperCase()} size="small" color={getStatusColor(order.status) as any} />

@@ -10,13 +10,7 @@ const ProductFormModal: any = dynamic(() => import('@/components/ProductFormModa
   ssr: false,
 });
 
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  description: string;
-  imageUrl: string;
-}
+import { Product } from '@/types/app';
 
 export default function AdminProducts() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -65,13 +59,13 @@ export default function AdminProducts() {
                 <CardMedia
                   component="img"
                   height="200"
-                  image={item.imageUrl}
+                  image={(item.images && item.images.length > 0) ? item.images[0] : (item.imageUrl || 'https://via.placeholder.com/250')}
                   alt={item.name}
                   sx={{ objectFit: 'cover' }}
                 />
                 <CardContent sx={{ flexGrow: 1 }}>
                   <Typography variant="h6" gutterBottom>{item.name}</Typography>
-                  <Typography variant="h5" color="secondary" gutterBottom>${item.price.toFixed(2)}</Typography>
+                  <Typography variant="h5" color="secondary" gutterBottom>₹{item.price.toFixed(2)}</Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{item.description}</Typography>
                   <Button variant="outlined" color="error" size="small" onClick={() => handleDelete(item.id)}>
                     Delete
