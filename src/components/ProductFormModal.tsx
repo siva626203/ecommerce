@@ -4,13 +4,15 @@ import React, { useState, useRef } from 'react';
 import { 
   Button, TextField, Box, Typography, Dialog, DialogTitle, 
   DialogContent, DialogActions, CircularProgress, Grid, 
-  IconButton, Alert
+  IconButton, Alert, FormControl, InputLabel, Select, MenuItem
 } from '@mui/material';
 import { collection, addDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '@/lib/firebase/config';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
+
+const CATEGORIES = ["All", "Electronics", "Fashion", "Home", "Beauty", "Others"];
 
 interface ProductFormModalProps {
   open: boolean;
@@ -22,6 +24,9 @@ export default function ProductFormModal({ open, onClose, onSuccess }: ProductFo
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [description, setDescription] = useState('');
+  const [category, setCategory] = useState(CATEGORIES[1]); // Default to Electronics
+  const [stock, setStock] = useState('10');
+  const [brand, setBrand] = useState('');
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -49,8 +54,8 @@ export default function ProductFormModal({ open, onClose, onSuccess }: ProductFo
   };
 
   const handleAddProduct = async () => {
-    if (!name || !price || !description || images.length === 0) {
-      setError("Please fill all fields and upload at least one image!");
+    if (!name || !price || !description || !category || !stock || images.length === 0) {
+      setError("Please fill all required fields and upload at least one image!");
       return;
     }
 
@@ -72,6 +77,9 @@ export default function ProductFormModal({ open, onClose, onSuccess }: ProductFo
         name,
         price: parseFloat(price),
         description,
+        category,
+        stock: parseInt(stock),
+        brand,
         imageUrl: imageUrls[0], // Main image
         images: imageUrls, // All images array
         createdAt: new Date()
@@ -84,6 +92,9 @@ export default function ProductFormModal({ open, onClose, onSuccess }: ProductFo
       setName('');
       setPrice('');
       setDescription('');
+      setCategory(CATEGORIES[1]);
+      setStock('10');
+      setBrand('');
       setImages([]);
       setPreviews([]);
       setIsLoading(false);
@@ -107,11 +118,49 @@ export default function ProductFormModal({ open, onClose, onSuccess }: ProductFo
           value={name} onChange={(e) => setName(e.target.value)} 
           disabled={isLoading}
         />
-        <TextField 
-          fullWidth label="Price (₹)" type="number" margin="normal" 
-          value={price} onChange={(e) => setPrice(e.target.value)} 
-          disabled={isLoading}
-        />
+
+        <Grid container spacing={2}>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <TextField 
+              fullWidth label="Price (₹)" type="number" margin="normal" 
+              value={price} onChange={(e) => setPrice(e.target.value)} 
+              disabled={isLoading}
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <TextField 
+              fullWidth label="Stock Quantity" type="number" margin="normal" 
+              value={stock} onChange={(e) => setStock(e.target.value)} 
+              disabled={isLoading}
+            />
+          </Grid>
+        </Grid>
+
+        <Grid container spacing={2}>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <FormControl fullWidth margin="normal">
+              <InputLabel>Category</InputLabel>
+              <Select
+                value={category}
+                label="Category"
+                onChange={(e) => setCategory(e.target.value)}
+                disabled={isLoading}
+              >
+                {CATEGORIES.filter(c => c !== "All").map(cat => (
+                  <MenuItem key={cat} value={cat}>{cat}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <TextField 
+              fullWidth label="Brand" margin="normal" 
+              value={brand} onChange={(e) => setBrand(e.target.value)} 
+              disabled={isLoading}
+            />
+          </Grid>
+        </Grid>
+
         <TextField 
           fullWidth label="Description" margin="normal" multiline rows={3}
           value={description} onChange={(e) => setDescription(e.target.value)} 

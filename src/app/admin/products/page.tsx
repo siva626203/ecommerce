@@ -11,6 +11,7 @@ const ProductFormModal: any = dynamic(() => import('@/components/ProductFormModa
 });
 
 import { Product } from '@/types/app';
+import { Chip, Stack } from '@mui/material';
 
 export default function AdminProducts() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -64,6 +65,10 @@ export default function AdminProducts() {
                   sx={{ objectFit: 'cover' }}
                 />
                 <CardContent sx={{ flexGrow: 1 }}>
+                  <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
+                    <Chip label={item.category || "Uncategorized"} size="small" color="primary" variant="outlined" />
+                    <Chip label={`Stock: ${item.stock ?? 0}`} size="small" color={(item.stock ?? 0) < 5 ? "error" : "success"} />
+                  </Stack>
                   <Typography variant="h6" gutterBottom>{item.name}</Typography>
                   <Typography variant="h5" color="secondary" gutterBottom>₹{item.price.toFixed(2)}</Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{item.description}</Typography>

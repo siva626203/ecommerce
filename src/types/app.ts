@@ -13,6 +13,9 @@ export interface Product {
   description: string;
   imageUrl: string; // Legacy/Main image
   images?: string[]; // Multiple images support
+  category: string;
+  stock: number;
+  brand?: string;
 }
 
 export interface CartItem {
